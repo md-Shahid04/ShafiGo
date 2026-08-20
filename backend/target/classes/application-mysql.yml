@@ -1,0 +1,56 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/swiftride_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Tiger@123}
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# ====================================================
+# SwiftRide Configuration
+# ====================================================
+swiftride:
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  matching:
+    search-radius-km: ${SEARCH_RADIUS_KM:6.0}
+    driver-response-timeout-seconds: 25
+  pricing:
+    rates:
+      BIKE:
+        baseFare: 25.00
+        pricePerKm: 9.00
+        pricePerMinute: 1.50
+        minimumFare: 30.00
+      SEDAN:
+        baseFare: 45.00
+        pricePerKm: 14.00
+        pricePerMinute: 2.00
+        minimumFare: 60.00
+      SUV:
+        baseFare: 80.00
+        pricePerKm: 22.00
+        pricePerMinute: 3.50
+        minimumFare: 100.00
+
+# ====================================================
+# Swagger / OpenAPI
+# ====================================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+server:
+  port: ${SERVER_PORT:8080}
