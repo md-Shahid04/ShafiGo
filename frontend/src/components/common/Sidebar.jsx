@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { LogoIcon } from './Logo';
 import {
   Compass,
   MapPin,
@@ -57,7 +58,7 @@ export const Sidebar = () => {
   return (
     <aside className="hidden lg:flex flex-col w-64 fixed left-0 top-16 bottom-0 bg-black border-r border-zinc-800/80 p-4 z-40">
       <div className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 px-3 py-2">
-        {user.role === 'ROLE_ADMIN' ? 'Admin Portal' : user.role === 'ROLE_DRIVER' ? 'Driver Partner' : 'Rider Menu'}
+        {user.role === 'ROLE_ADMIN' ? 'Admin Portal' : user.role === 'ROLE_DRIVER' ? 'ShafiGo Partner' : 'Rider Menu'}
       </div>
 
       <nav className="space-y-1.5 flex-1 mt-2">
@@ -85,11 +86,15 @@ export const Sidebar = () => {
 
       {/* Bottom Info Pill */}
       <div className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-[11px] text-zinc-400 space-y-1">
-        <div className="flex items-center gap-1.5 text-white font-bold">
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-          SwiftRide India
+        <div className="flex items-center gap-2 text-white font-bold">
+          <div className="w-4 h-4 text-white">
+            <LogoIcon className="w-full h-full" color="#FFFFFF" />
+          </div>
+          ShafiGo India
         </div>
-        <div className="text-[10px] text-zinc-500">Fast • Reliable • Safe</div>
+        <div className="text-[9px] font-black tracking-widest text-zinc-500 uppercase">
+          RIDE. ARRIVE. GO.
+        </div>
       </div>
     </aside>
   );

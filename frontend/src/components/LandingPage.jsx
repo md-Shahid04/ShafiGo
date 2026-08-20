@@ -7,6 +7,7 @@ import { FareEstimateCard } from '../components/rider/FareEstimateCard';
 import { MapView } from '../components/map/MapView';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { Logo, LogoIcon } from '../components/common/Logo';
 import { rideApi } from '../api/rideApi';
 import { useSelector } from 'react-redux';
 import {
@@ -64,20 +65,20 @@ export const LandingPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Left Column: Value Proposition */}
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-700 text-white text-xs font-extrabold tracking-wide">
-                <span>✦</span>
-                Next-Gen Urban Transit in India
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-white text-xs font-black tracking-widest uppercase">
+                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                RIDE. ARRIVE. GO.
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08]">
                 Go anywhere, effortlessly with{' '}
-                <span className="underline decoration-zinc-500 underline-offset-8">
-                  SwiftRide
+                <span className="underline decoration-white underline-offset-8">
+                  ShafiGo
                 </span>
               </h1>
 
               <p className="text-base sm:text-lg text-zinc-400 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                Book autos, bikes, sedans, and SUVs across major Indian metros with upfront transparent fares, verified driver partners, and real-time GPS tracking.
+                Book autos, bikes, sedans, and SUVs across India with upfront transparent fares in INR, verified driver partners, and real-time GPS tracking.
               </p>
 
               {/* Action Buttons */}
@@ -87,7 +88,7 @@ export const LandingPage = () => {
                   icon={ArrowRight}
                   onClick={() => navigate(isAuthenticated ? '/rider/book' : '/register')}
                 >
-                  {isAuthenticated ? 'Book a Ride Now' : 'Ride with SwiftRide'}
+                  {isAuthenticated ? 'Book a Ride Now' : 'Ride with ShafiGo'}
                 </Button>
                 <Button
                   variant="secondary"
@@ -95,14 +96,14 @@ export const LandingPage = () => {
                   icon={Car}
                   onClick={() => navigate('/driver/register')}
                 >
-                  Drive & Earn in India
+                  Drive with ShafiGo
                 </Button>
               </div>
 
               {/* Trust Metrics */}
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-zinc-800/80 max-w-md mx-auto lg:mx-0 text-left">
                 <div>
-                  <h4 className="text-xl font-black text-white">4.9 ★</h4>
+                  <h4 className="text-xl font-black text-white">4.95 ★</h4>
                   <p className="text-xs text-zinc-400">Driver Rating</p>
                 </div>
                 <div>
@@ -124,8 +125,8 @@ export const LandingPage = () => {
                     <h3 className="text-lg font-black text-white">Instant Fare Calculator</h3>
                     <p className="text-xs text-zinc-400">Select pickup and dropoff hubs across Indian cities</p>
                   </div>
-                  <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">
-                    <Navigation className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center p-1.5 font-black shadow-md">
+                    <LogoIcon className="w-full h-full" color="#000000" />
                   </div>
                 </div>
 
@@ -176,7 +177,7 @@ export const LandingPage = () => {
               </div>
               <div>
                 <h4 className="text-sm font-black text-white">1-Click Test Accounts (India)</h4>
-                <p className="text-xs text-zinc-400">Instant login as Rider (Bengaluru), Driver (Sedan/SUV/Bike), or Admin</p>
+                <p className="text-xs text-zinc-400">Instant login as Rider (Bengaluru), Driver (ShafiGo / Premier / Moto), or Admin</p>
               </div>
             </div>
 
@@ -191,7 +192,7 @@ export const LandingPage = () => {
                 onClick={() => handleQuickLogin('driver1@swiftride.com', 'Driver@12345')}
                 className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-white hover:text-black border border-zinc-700 text-white text-xs font-bold transition-all"
               >
-                🚘 Test Driver (Amit P. - SwiftGo)
+                🚘 Test Driver (Amit P. - ShafiGo)
               </button>
               <button
                 onClick={() => handleQuickLogin('admin@swiftride.com', 'Admin@12345')}
@@ -210,8 +211,8 @@ export const LandingPage = () => {
           <h2 className="text-3xl font-black text-white">
             Built for modern Indian urban transit
           </h2>
-          <p className="text-sm text-zinc-400">
-            Speed, safety, transparent pricing, and sub-second dispatch.
+          <p className="text-sm text-zinc-400 font-bold uppercase tracking-widest">
+            RIDE. ARRIVE. GO.
           </p>
         </div>
 
@@ -240,19 +241,23 @@ export const LandingPage = () => {
             <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center font-black">
               <Car className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-black text-white">SwiftMoto to SwiftPremier</h3>
+            <h3 className="text-lg font-black text-white">ShafiMoto to ShafiPremier</h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Select between quick two-wheelers, economical SwiftGo sedans, and executive SwiftPremier SUVs with upfront INR pricing.
+              Select between quick two-wheelers, economical ShafiGo sedans, and executive ShafiPremier SUVs with upfront INR pricing.
             </p>
           </Card>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-zinc-800 bg-black py-10">
-        <div className="max-w-7xl mx-auto px-4 text-center text-xs text-zinc-500 space-y-2">
-          <p className="font-extrabold text-zinc-300">SwiftRide India — Ride-Hailing Platform MVP</p>
-          <p>© {new Date().getFullYear()} SwiftRide. Bengaluru • Mumbai • Delhi NCR • Hyderabad.</p>
+      <footer className="mt-auto border-t border-zinc-800 bg-black py-12">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-4">
+          <div className="flex justify-center">
+            <Logo variant="full" showTagline={true} />
+          </div>
+          <p className="text-xs text-zinc-500">
+            © {new Date().getFullYear()} ShafiGo India. All rights reserved. Bengaluru • Mumbai • Delhi NCR • Hyderabad.
+          </p>
         </div>
       </footer>
     </div>

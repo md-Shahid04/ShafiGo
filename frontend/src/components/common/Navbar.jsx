@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Badge } from './Badge';
+import { Logo } from './Logo';
 import {
   Menu,
   X,
@@ -38,13 +39,8 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-6">
-            <Link to={getDashboardLink()} className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-black font-black text-xl shadow-lg transition-transform group-hover:scale-105">
-                ✦
-              </div>
-              <span className="text-xl font-black tracking-tight text-white">
-                Swift<span className="text-zinc-400">Ride</span>
-              </span>
+            <Link to={getDashboardLink()} className="flex items-center group">
+              <Logo variant="horizontal" showTagline={true} />
             </Link>
 
             {/* Quick Links for Public */}

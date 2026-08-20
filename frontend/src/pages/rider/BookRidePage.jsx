@@ -76,13 +76,19 @@ export const BookRidePage = () => {
     }
   };
 
+  const getTierLabel = () => {
+    if (selectedVehicle === 'BIKE') return 'ShafiMoto';
+    if (selectedVehicle === 'SUV') return 'ShafiPremier';
+    return 'ShafiGo';
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">Book a Ride</h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Choose your route and ride option in India
+            Choose your route and ride option with ShafiGo
           </p>
         </div>
       </div>
@@ -120,9 +126,9 @@ export const BookRidePage = () => {
                     icon={ArrowRight}
                     onClick={handleRequestRide}
                     loading={requestingRide}
-                    className="shadow-2xl"
+                    className="shadow-2xl font-black text-base"
                   >
-                    Confirm & Request {selectedVehicle === 'BIKE' ? 'SwiftMoto' : selectedVehicle === 'SUV' ? 'SwiftPremier' : 'SwiftGo'}
+                    Confirm & Request {getTierLabel()}
                   </Button>
                 </div>
               )}

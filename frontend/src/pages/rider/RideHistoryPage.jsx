@@ -64,7 +64,7 @@ export const RideHistoryPage = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">Your Trips</h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Review past SwiftRide trips, fares, and receipts across India
+            Review past ShafiGo trips, fares, and receipts across India
           </p>
         </div>
       </div>
@@ -74,7 +74,7 @@ export const RideHistoryPage = () => {
           <EmptyState
             icon={Car}
             title="No Trips Recorded Yet"
-            description="You haven't booked any rides with SwiftRide yet. Your trip history will appear here."
+            description="You haven't booked any rides with ShafiGo yet. Your trip history will appear here."
             actionText="Book First Ride"
             onAction={() => (window.location.href = '/rider/book')}
           />

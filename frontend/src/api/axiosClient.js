@@ -13,7 +13,7 @@ const axiosClient = axios.create({
 // Request Interceptor: Attach JWT Token
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('swiftride_token');
+    const token = localStorage.getItem('shafigo_token') || localStorage.getItem('swiftride_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,6 +31,8 @@ axiosClient.interceptors.response.use(
     // Handle 401 Unauthorized (expired token or invalid session)
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        localStorage.removeItem('shafigo_token');
+        localStorage.removeItem('shafigo_user');
         localStorage.removeItem('swiftride_token');
         localStorage.removeItem('swiftride_user');
         window.location.href = '/login?expired=true';

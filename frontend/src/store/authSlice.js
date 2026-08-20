@@ -1,12 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const storedToken = localStorage.getItem('swiftride_token');
-const storedUser = localStorage.getItem('swiftride_user')
-  ? JSON.parse(localStorage.getItem('swiftride_user'))
-  : null;
-const storedDriver = localStorage.getItem('swiftride_driver')
-  ? JSON.parse(localStorage.getItem('swiftride_driver'))
-  : null;
+const storedToken = localStorage.getItem('shafigo_token') || localStorage.getItem('swiftride_token');
+const storedUser = localStorage.getItem('shafigo_user')
+  ? JSON.parse(localStorage.getItem('shafigo_user'))
+  : (localStorage.getItem('swiftride_user') ? JSON.parse(localStorage.getItem('swiftride_user')) : null);
+const storedDriver = localStorage.getItem('shafigo_driver')
+  ? JSON.parse(localStorage.getItem('shafigo_driver'))
+  : (localStorage.getItem('swiftride_driver') ? JSON.parse(localStorage.getItem('swiftride_driver')) : null);
 
 const initialState = {
   token: storedToken || null,
@@ -25,25 +25,25 @@ const authSlice = createSlice({
       const { token, user, driver } = action.payload;
       if (token) {
         state.token = token;
-        localStorage.setItem('swiftride_token', token);
+        localStorage.setItem('shafigo_token', token);
       }
       state.user = user;
       state.driver = driver || null;
       state.isAuthenticated = true;
-      localStorage.setItem('swiftride_user', JSON.stringify(user));
+      localStorage.setItem('shafigo_user', JSON.stringify(user));
       if (driver) {
-        localStorage.setItem('swiftride_driver', JSON.stringify(driver));
+        localStorage.setItem('shafigo_driver', JSON.stringify(driver));
       } else {
-        localStorage.removeItem('swiftride_driver');
+        localStorage.removeItem('shafigo_driver');
       }
     },
     updateUser: (state, action) => {
       state.user = { ...state.user, ...action.payload };
-      localStorage.setItem('swiftride_user', JSON.stringify(state.user));
+      localStorage.setItem('shafigo_user', JSON.stringify(state.user));
     },
     updateDriver: (state, action) => {
       state.driver = { ...state.driver, ...action.payload };
-      localStorage.setItem('swiftride_driver', JSON.stringify(state.driver));
+      localStorage.setItem('shafigo_driver', JSON.stringify(state.driver));
     },
     logout: (state) => {
       state.token = null;
@@ -52,6 +52,9 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
+      localStorage.removeItem('shafigo_token');
+      localStorage.removeItem('shafigo_user');
+      localStorage.removeItem('shafigo_driver');
       localStorage.removeItem('swiftride_token');
       localStorage.removeItem('swiftride_user');
       localStorage.removeItem('swiftride_driver');

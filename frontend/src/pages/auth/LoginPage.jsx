@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { Logo } from '../../components/common/Logo';
 import { Mail, Lock, ArrowRight, KeyRound } from 'lucide-react';
 
 export const LoginPage = () => {
@@ -27,18 +28,12 @@ export const LoginPage = () => {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Brand Header */}
+        {/* Brand Header with Logo */}
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2.5 group mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-white text-black font-black flex items-center justify-center text-2xl shadow-xl">
-              ✦
-            </div>
-            <span className="text-2xl font-black text-white tracking-tight">
-              Swift<span className="text-zinc-400">Ride</span>
-            </span>
+          <Link to="/" className="inline-block group mb-1">
+            <Logo variant="full" showTagline={true} />
           </Link>
-          <h2 className="text-2xl font-black text-white">Welcome Back</h2>
-          <p className="text-xs text-zinc-400">Sign in to your SwiftRide account</p>
+          <p className="text-xs text-zinc-400">Sign in to your ShafiGo account</p>
         </div>
 
         {/* Login Form Card */}

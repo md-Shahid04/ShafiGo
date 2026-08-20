@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { Logo } from '../../components/common/Logo';
 import { Mail, Lock, User, Phone, FileText, Car, ArrowRight } from 'lucide-react';
 
 export const DriverRegisterPage = () => {
@@ -37,16 +38,11 @@ export const DriverRegisterPage = () => {
       <div className="w-full max-w-xl space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2.5 group mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-white text-black font-black flex items-center justify-center text-2xl shadow-xl">
-              ✦
-            </div>
-            <span className="text-2xl font-black text-white tracking-tight">
-              Swift<span className="text-zinc-400">Ride</span> Partner
-            </span>
+          <Link to="/" className="inline-block group mb-1">
+            <Logo variant="full" showTagline={true} />
           </Link>
-          <h2 className="text-2xl font-black text-white">Drive with SwiftRide India</h2>
-          <p className="text-xs text-zinc-400">Earn with low platform commissions and instant payouts</p>
+          <h2 className="text-xl font-black text-white">Drive with ShafiGo India</h2>
+          <p className="text-xs text-zinc-400">Earn with low platform commissions and instant bank settlements</p>
         </div>
 
         <Card className="p-6 sm:p-8 bg-zinc-950 border border-zinc-800 shadow-2xl">
@@ -139,9 +135,9 @@ export const DriverRegisterPage = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800 text-white font-semibold text-sm focus:outline-none focus:border-white"
                 >
-                  <option value="BIKE">SwiftMoto (Motorcycle / Scooter)</option>
-                  <option value="SEDAN">SwiftGo (Sedan / Hatchback)</option>
-                  <option value="SUV">SwiftPremier (6-Seater SUV)</option>
+                  <option value="BIKE">ShafiMoto (Motorcycle / Scooter)</option>
+                  <option value="SEDAN">ShafiGo (Sedan / Hatchback)</option>
+                  <option value="SUV">ShafiPremier (6-Seater SUV)</option>
                 </select>
               </div>
 

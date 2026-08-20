@@ -4,15 +4,15 @@ import { Bike, Car, Shield, Sparkles, Zap } from 'lucide-react';
 const VEHICLE_TIERS = [
   {
     type: 'BIKE',
-    name: 'SwiftMoto',
-    description: 'Fast, affordable two-wheeler trip',
+    name: 'ShafiMoto',
+    description: 'Fast, affordable two-wheeler ride',
     icon: Bike,
     capacity: '1 Person',
     badge: 'Popular',
   },
   {
     type: 'SEDAN',
-    name: 'SwiftGo',
+    name: 'ShafiGo',
     description: 'Comfortable AC sedan & hatchback',
     icon: Car,
     capacity: '4 Seats',
@@ -20,11 +20,11 @@ const VEHICLE_TIERS = [
   },
   {
     type: 'SUV',
-    name: 'SwiftPremier',
-    description: 'Spacious high-end SUV with top drivers',
+    name: 'ShafiPremier',
+    description: 'Spacious premium SUV with top drivers',
     icon: Shield,
     capacity: '6 Seats',
-    badge: 'Premium',
+    badge: 'Executive',
   },
 ];
 
@@ -37,7 +37,7 @@ export const VehicleSelector = ({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between text-xs text-zinc-400 font-bold uppercase tracking-wider px-1">
-        <span>Available Options</span>
+        <span>Available Ride Options</span>
         <span>Est. ~{durationMinutes} mins</span>
       </div>
 
