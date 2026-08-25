@@ -11,14 +11,7 @@ import { rideApi } from '../../api/rideApi';
 import { setActiveRide, setHistory } from '../../store/rideSlice';
 import { setDestinationLocation } from '../../store/locationSlice';
 import {
-  MapPin,
-  Clock,
-  Car,
-  Shield,
-  Star,
   ArrowRight,
-  TrendingUp,
-  Sparkles,
   Building2,
   Navigation,
 } from 'lucide-react';

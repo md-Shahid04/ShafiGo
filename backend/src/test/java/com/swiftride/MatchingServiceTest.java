@@ -34,6 +34,7 @@ class MatchingServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(matchingService, "searchRadiusKm", 5.0);
+        ReflectionTestUtils.setField(matchingService, "locationFreshnessSeconds", 300L);
     }
 
     @Test

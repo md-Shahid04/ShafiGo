@@ -1,26 +1,29 @@
 import React from 'react';
-import { LeafletMap } from './LeafletMap';
+import { GoogleMapView } from './GoogleMapView';
 
 export const MapView = ({
   pickup,
   destination,
   driverLocation,
   nearbyDrivers = [],
+  activeRide,
   onMapClick,
+  onRouteCalculated,
   height = '100%',
   className = '',
 }) => {
   return (
-    <div className={`relative w-full h-full min-h-[300px] overflow-hidden ${className}`}>
-      <LeafletMap
-        pickup={pickup}
-        destination={destination}
-        driverLocation={driverLocation}
-        nearbyDrivers={nearbyDrivers}
-        onMapClick={onMapClick}
-        height={height}
-      />
-    </div>
+    <GoogleMapView
+      pickup={pickup}
+      destination={destination}
+      driverLocation={driverLocation}
+      nearbyDrivers={nearbyDrivers}
+      activeRide={activeRide}
+      onMapClick={onMapClick}
+      onRouteCalculated={onRouteCalculated}
+      height={height}
+      className={className}
+    />
   );
 };
 

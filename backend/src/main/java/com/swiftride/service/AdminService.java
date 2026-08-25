@@ -6,10 +6,7 @@ import com.swiftride.dto.response.RideDto;
 import com.swiftride.dto.response.UserDto;
 import com.swiftride.entity.*;
 import com.swiftride.exception.ResourceNotFoundException;
-import com.swiftride.repository.DriverRepository;
-import com.swiftride.repository.RatingRepository;
-import com.swiftride.repository.RideRepository;
-import com.swiftride.repository.UserRepository;
+import com.swiftride.repository.*;
 import com.swiftride.util.EntityMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,21 +23,34 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final DriverRepository driverRepository;
+    private final DriverEarningRepository driverEarningRepository;
     private final RideRepository rideRepository;
     private final RatingRepository ratingRepository;
+    private final WebSocketEventPublisher eventPublisher;
 
-    public AdminService(UserRepository userRepository, DriverRepository driverRepository, RideRepository rideRepository, RatingRepository ratingRepository) {
+    public AdminService(
+            UserRepository userRepository,
+            DriverRepository driverRepository,
+            DriverEarningRepository driverEarningRepository,
+            RideRepository rideRepository,
+            RatingRepository ratingRepository,
+            WebSocketEventPublisher eventPublisher
+    ) {
         this.userRepository = userRepository;
         this.driverRepository = driverRepository;
+        this.driverEarningRepository = driverEarningRepository;
         this.rideRepository = rideRepository;
         this.ratingRepository = ratingRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
     public AdminDashboardStatsDto getDashboardStats() {
         long totalUsers = userRepository.count();
         long totalRiders = userRepository.countByRole(Role.ROLE_RIDER);
-        long totalDrivers = userRepository.countByRole(Role.ROLE_DRIVER);
+        long totalDrivers = driverRepository.count();
+        long totalApprovedDrivers = driverRepository.countByVerificationStatus(DriverVerificationStatus.APPROVED);
+        long activeDrivers = driverRepository.countByVerificationStatusAndOnlineStatus(DriverVerificationStatus.APPROVED, DriverOnlineStatus.ONLINE);
         long onlineDrivers = driverRepository.countByOnlineStatus(DriverOnlineStatus.ONLINE);
         long busyDrivers = driverRepository.countByOnlineStatus(DriverOnlineStatus.BUSY);
         long pendingApprovals = driverRepository.countByVerificationStatus(DriverVerificationStatus.PENDING);
@@ -54,6 +64,16 @@ public class AdminService {
         Double totalRevenue = rideRepository.sumFinalFareByStatus(RideStatus.RIDE_COMPLETED);
         if (totalRevenue == null) totalRevenue = 0.0;
 
+        Double driverEarnings = driverEarningRepository.sumDriverEarningsAll();
+        if (driverEarnings == null || driverEarnings == 0.0) {
+            driverEarnings = totalRevenue * 0.85;
+        }
+
+        Double platformCommission = driverEarningRepository.sumPlatformFeesAll();
+        if (platformCommission == null || platformCommission == 0.0) {
+            platformCommission = totalRevenue * 0.15;
+        }
+
         Double avgRating = ratingRepository.findOverallAverageRating();
         if (avgRating == null) avgRating = 5.0;
 
@@ -61,12 +81,20 @@ public class AdminService {
                 .totalUsers(totalUsers)
                 .totalRiders(totalRiders)
                 .totalDrivers(totalDrivers)
+                .totalApprovedDrivers(totalApprovedDrivers)
+                .activeDrivers(activeDrivers)
                 .onlineDrivers(onlineDrivers)
                 .busyDrivers(busyDrivers)
                 .pendingDriverApprovals(pendingApprovals)
                 .activeRides(activeRides)
+                .activeTrips(activeRides)
                 .completedRides(completedRides)
+                .completedTrips(completedRides)
                 .cancelledRides(cancelledRides)
+                .grossRevenue(BigDecimal.valueOf(totalRevenue).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                .driverEarnings(BigDecimal.valueOf(driverEarnings).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                .platformCommission(BigDecimal.valueOf(platformCommission).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                .totalRevenue(BigDecimal.valueOf(totalRevenue).setScale(2, RoundingMode.HALF_UP).doubleValue())
                 .totalRevenueEstimated(BigDecimal.valueOf(totalRevenue).setScale(2, RoundingMode.HALF_UP).doubleValue())
                 .averageRating(BigDecimal.valueOf(avgRating).setScale(1, RoundingMode.HALF_UP).doubleValue())
                 .build();
@@ -102,10 +130,15 @@ public class AdminService {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + driverId));
         driver.setVerificationStatus(status);
-        if (status == DriverVerificationStatus.REJECTED) {
+        if (status != DriverVerificationStatus.APPROVED || driver.getOnlineStatus() != DriverOnlineStatus.BUSY) {
             driver.setOnlineStatus(DriverOnlineStatus.OFFLINE);
         }
         Driver updated = driverRepository.save(driver);
+
+        // Broadcast to Driver & Admin
+        eventPublisher.publishDriverVerificationUpdated(updated);
+        eventPublisher.publishDriverStatusChanged(updated);
+
         return EntityMapper.toDriverDto(updated);
     }
 
@@ -121,7 +154,16 @@ public class AdminService {
     public List<RideDto> getActiveRides() {
         return rideRepository.findByStatusInOrderByCreatedAtDesc(List.of(
                 RideStatus.SEARCHING_DRIVER, RideStatus.DRIVER_ACCEPTED,
-                RideStatus.DRIVER_ARRIVING, RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED
+                RideStatus.DRIVER_ARRIVING, RideStatus.DRIVER_ARRIVED,
+                RideStatus.RIDE_STARTED
         )).stream().map(EntityMapper::toRideDto).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DriverDto> getOnlineDrivers() {
+        return driverRepository.findByVerificationStatusAndOnlineStatus(
+                DriverVerificationStatus.APPROVED,
+                DriverOnlineStatus.ONLINE
+        ).stream().map(EntityMapper::toDriverDto).collect(Collectors.toList());
     }
 }

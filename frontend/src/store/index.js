@@ -6,6 +6,7 @@ import driverReducer from './driverSlice';
 import locationReducer from './locationSlice';
 import notificationReducer from './notificationSlice';
 import uiReducer from './uiSlice';
+import adminReducer from './adminSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     location: locationReducer,
     notification: notificationReducer,
     ui: uiReducer,
+    admin: adminReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

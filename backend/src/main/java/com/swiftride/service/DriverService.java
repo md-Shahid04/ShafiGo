@@ -49,9 +49,14 @@ public class DriverService {
         Driver driver = driverRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver profile not found for user: " + userId));
 
-        if (driver.getVerificationStatus() != DriverVerificationStatus.APPROVED) {
-            throw new BadRequestException("Cannot go online. Your driver account verification is currently: "
-                    + driver.getVerificationStatus());
+        if (driver.getVerificationStatus() == DriverVerificationStatus.PENDING) {
+            throw new BadRequestException("Driver account is awaiting admin approval.");
+        }
+        if (driver.getVerificationStatus() == DriverVerificationStatus.REJECTED) {
+            throw new BadRequestException("Driver account has been rejected. Please contact support.");
+        }
+        if (driver.getVerificationStatus() == DriverVerificationStatus.SUSPENDED) {
+            throw new BadRequestException("Driver account is currently suspended.");
         }
 
         boolean hasActiveVehicle = driver.getVehicles().stream().anyMatch(Vehicle::getActive);
@@ -61,6 +66,10 @@ public class DriverService {
 
         driver.setOnlineStatus(dto.getOnlineStatus());
         Driver updated = driverRepository.save(driver);
+
+        // Publish live status change to Admin dashboard
+        eventPublisher.publishDriverStatusChanged(updated);
+
         return EntityMapper.toDriverDto(updated);
     }
 
@@ -71,7 +80,19 @@ public class DriverService {
 
         driver.setCurrentLatitude(dto.getLatitude());
         driver.setCurrentLongitude(dto.getLongitude());
+        driver.setLastLocationUpdate(java.time.LocalDateTime.now());
         Driver updated = driverRepository.save(driver);
+
+        // Broadcast to Admin live map
+        eventPublisher.publishDriverLocationToAdmin(
+                updated,
+                dto.getLatitude(),
+                dto.getLongitude(),
+                dto.getHeading(),
+                dto.getSpeed(),
+                dto.getAccuracy(),
+                dto.getTimestamp()
+        );
 
         if (dto.getRideId() != null) {
             Ride ride = rideRepository.findById(dto.getRideId()).orElse(null);
@@ -87,7 +108,16 @@ public class DriverService {
                         .build();
                 rideLocationRepository.save(location);
 
-                eventPublisher.publishDriverLocation(ride.getId(), driver.getId(), dto.getLatitude(), dto.getLongitude());
+                eventPublisher.publishDriverLocation(
+                        ride.getId(),
+                        driver.getId(),
+                        dto.getLatitude(),
+                        dto.getLongitude(),
+                        dto.getHeading(),
+                        dto.getSpeed(),
+                        dto.getAccuracy(),
+                        dto.getTimestamp()
+                );
             }
         }
 

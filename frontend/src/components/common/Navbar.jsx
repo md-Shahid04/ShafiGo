@@ -1,25 +1,19 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { useAuth } from '../../hooks/useAuth';
 import { Badge } from './Badge';
 import { Logo } from './Logo';
-import {
-  Menu,
-  X,
-  Bell,
-  User as UserIcon,
-  LogOut,
-  MapPin,
-  Car,
-  Shield,
-  Activity,
-} from 'lucide-react';
+import { Menu, X, Bell, LogOut } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { unreadCount } = useSelector((state) => state.notification);
+  const { incomingRequests } = useSelector((state) => state.driver);
   const navigate = useNavigate();
-  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const effectiveUnread = (unreadCount || 0) + (user?.role === 'ROLE_DRIVER' ? (incomingRequests?.length || 0) : 0);
 
   const handleLogout = () => {
     logout();
@@ -65,12 +59,17 @@ export const Navbar = () => {
               <>
                 <Badge status={user?.role} size="xs" />
 
-                {/* Notifications Link */}
+                {/* Notifications Link with dynamic badge */}
                 <Link
                   to={user?.role === 'ROLE_DRIVER' ? '/driver/notifications' : '/rider/notifications'}
                   className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-all relative"
                 >
                   <Bell className="w-5 h-5" />
+                  {effectiveUnread > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-white text-black text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shadow-md">
+                      {effectiveUnread > 9 ? '9+' : effectiveUnread}
+                    </span>
+                  )}
                 </Link>
 
                 {/* User Profile Pill */}

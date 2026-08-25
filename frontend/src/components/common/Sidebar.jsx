@@ -11,7 +11,6 @@ import {
   DollarSign,
   FileText,
   Users,
-  ShieldCheck,
   Activity,
   Settings,
   Bell,

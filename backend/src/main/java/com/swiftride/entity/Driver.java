@@ -41,6 +41,9 @@ public class Driver {
     @Column
     private Double currentLongitude;
 
+    @Column
+    private LocalDateTime lastLocationUpdate;
+
     @Column(nullable = false)
     private Double rating = 5.0;
 
@@ -63,7 +66,7 @@ public class Driver {
 
     public Driver() {}
 
-    public Driver(Long id, User user, String licenseNumber, DriverVerificationStatus verificationStatus, DriverOnlineStatus onlineStatus, Double currentLatitude, Double currentLongitude, Double rating, Integer totalRides, List<Vehicle> vehicles, Long version, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Driver(Long id, User user, String licenseNumber, DriverVerificationStatus verificationStatus, DriverOnlineStatus onlineStatus, Double currentLatitude, Double currentLongitude, LocalDateTime lastLocationUpdate, Double rating, Integer totalRides, List<Vehicle> vehicles, Long version, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.user = user;
         this.licenseNumber = licenseNumber;
@@ -71,6 +74,7 @@ public class Driver {
         this.onlineStatus = onlineStatus != null ? onlineStatus : DriverOnlineStatus.OFFLINE;
         this.currentLatitude = currentLatitude;
         this.currentLongitude = currentLongitude;
+        this.lastLocationUpdate = lastLocationUpdate;
         this.rating = rating != null ? rating : 5.0;
         this.totalRides = totalRides != null ? totalRides : 0;
         this.vehicles = vehicles != null ? vehicles : new ArrayList<>();
@@ -91,6 +95,7 @@ public class Driver {
         private DriverOnlineStatus onlineStatus = DriverOnlineStatus.OFFLINE;
         private Double currentLatitude;
         private Double currentLongitude;
+        private LocalDateTime lastLocationUpdate;
         private Double rating = 5.0;
         private Integer totalRides = 0;
         private List<Vehicle> vehicles = new ArrayList<>();
@@ -105,6 +110,7 @@ public class Driver {
         public Builder onlineStatus(DriverOnlineStatus status) { this.onlineStatus = status; return this; }
         public Builder currentLatitude(Double lat) { this.currentLatitude = lat; return this; }
         public Builder currentLongitude(Double lng) { this.currentLongitude = lng; return this; }
+        public Builder lastLocationUpdate(LocalDateTime lastUpdate) { this.lastLocationUpdate = lastUpdate; return this; }
         public Builder rating(Double rating) { this.rating = rating; return this; }
         public Builder totalRides(Integer totalRides) { this.totalRides = totalRides; return this; }
         public Builder vehicles(List<Vehicle> vehicles) { this.vehicles = vehicles; return this; }
@@ -113,7 +119,7 @@ public class Driver {
         public Builder updatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; return this; }
 
         public Driver build() {
-            return new Driver(id, user, licenseNumber, verificationStatus, onlineStatus, currentLatitude, currentLongitude, rating, totalRides, vehicles, version, createdAt, updatedAt);
+            return new Driver(id, user, licenseNumber, verificationStatus, onlineStatus, currentLatitude, currentLongitude, lastLocationUpdate, rating, totalRides, vehicles, version, createdAt, updatedAt);
         }
     }
 
@@ -137,6 +143,9 @@ public class Driver {
 
     public Double getCurrentLongitude() { return currentLongitude; }
     public void setCurrentLongitude(Double currentLongitude) { this.currentLongitude = currentLongitude; }
+
+    public LocalDateTime getLastLocationUpdate() { return lastLocationUpdate; }
+    public void setLastLocationUpdate(LocalDateTime lastLocationUpdate) { this.lastLocationUpdate = lastLocationUpdate; }
 
     public Double getRating() { return rating; }
     public void setRating(Double rating) { this.rating = rating; }

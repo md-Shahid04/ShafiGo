@@ -28,6 +28,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final WebSocketEventPublisher eventPublisher;
 
     public AuthService(
             UserRepository userRepository,
@@ -35,7 +36,8 @@ public class AuthService {
             VehicleRepository vehicleRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            AuthenticationManager authenticationManager
+            AuthenticationManager authenticationManager,
+            WebSocketEventPublisher eventPublisher
     ) {
         this.userRepository = userRepository;
         this.driverRepository = driverRepository;
@@ -43,6 +45,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -63,6 +66,9 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         String token = jwtService.generateToken(savedUser);
+
+        // Publish live event to Admin dashboard
+        eventPublisher.publishUserRegistered(savedUser);
 
         return AuthResponse.builder()
                 .token(token)
@@ -121,6 +127,9 @@ public class AuthService {
 
         String token = jwtService.generateToken(savedUser);
 
+        // Publish live event to Admin dashboard
+        eventPublisher.publishDriverRegistered(savedDriver);
+
         return AuthResponse.builder()
                 .token(token)
                 .user(EntityMapper.toUserDto(savedUser))
@@ -136,7 +145,7 @@ public class AuthService {
                             request.getEmail().toLowerCase().trim(),
                             request.getPassword()
                     )
-            );
+                );
         } catch (Exception e) {
             throw new BadRequestException("Invalid email or password");
         }

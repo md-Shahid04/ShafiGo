@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   profile: null,
+  driverProfile: null,
   vehicles: [],
   onlineStatus: 'OFFLINE',
   incomingRequests: [],
@@ -19,6 +20,7 @@ const driverSlice = createSlice({
   reducers: {
     setDriverProfile: (state, action) => {
       state.profile = action.payload;
+      state.driverProfile = action.payload;
       state.onlineStatus = action.payload?.onlineStatus || 'OFFLINE';
       if (action.payload?.vehicles) {
         state.vehicles = action.payload.vehicles;
@@ -28,6 +30,9 @@ const driverSlice = createSlice({
       state.onlineStatus = action.payload;
       if (state.profile) {
         state.profile.onlineStatus = action.payload;
+      }
+      if (state.driverProfile) {
+        state.driverProfile.onlineStatus = action.payload;
       }
     },
     setVehicles: (state, action) => {

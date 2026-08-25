@@ -28,6 +28,8 @@ C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\request\VehicleR
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\AdminDashboardStatsDto.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\AuthResponse.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\DriverDto.java
+C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\DriverEarningDto.java
+C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\DriverEarningsSummaryDto.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\NotificationDto.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\RatingDto.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\RideDto.java
@@ -36,6 +38,7 @@ C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\RideLoc
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\UserDto.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\dto\response\VehicleDto.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\entity\Driver.java
+C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\entity\DriverEarning.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\entity\DriverOnlineStatus.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\entity\DriverVerificationStatus.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\entity\Notification.java
@@ -53,6 +56,7 @@ C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\exception\GlobalExce
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\exception\InvalidRideStatusException.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\exception\ResourceNotFoundException.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\exception\UnauthorizedException.java
+C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\repository\DriverEarningRepository.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\repository\DriverRepository.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\repository\NotificationRepository.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\repository\RatingRepository.java
@@ -62,6 +66,7 @@ C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\repository\UserRepos
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\repository\VehicleRepository.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\service\AdminService.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\service\AuthService.java
+C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\service\DriverEarningService.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\service\DriverService.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\service\MatchingService.java
 C:\Workspace\Uber clone\backend\src\main\java\com\swiftride\service\NotificationService.java

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { LocationPicker } from '../../components/map/LocationPicker';
 import { VehicleSelector } from '../../components/rider/VehicleSelector';
@@ -11,10 +10,11 @@ import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { rideApi } from '../../api/rideApi';
 import { setActiveRide } from '../../store/rideSlice';
-import { ArrowRight, Navigation, RefreshCw } from 'lucide-react';
+import { setRouteDetails } from '../../store/locationSlice';
+import { showToast } from '../../store/uiSlice';
+import { ArrowRight, AlertCircle, RefreshCw } from 'lucide-react';
 
 export const BookRidePage = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const { pickupLocation, destinationLocation } = useSelector((state) => state.location);
@@ -26,12 +26,31 @@ export const BookRidePage = () => {
   const [requestingRide, setRequestingRide] = useState(false);
   const [isSearchingDriver, setIsSearchingDriver] = useState(false);
 
+  // Check for any ongoing active ride on initial page load
+  useEffect(() => {
+    fetchActiveRideOnMount();
+  }, []);
+
+  const fetchActiveRideOnMount = async () => {
+    try {
+      const res = await rideApi.getActiveRide();
+      if (res.success && res.data) {
+        dispatch(setActiveRide(res.data));
+        if (res.data.status === 'SEARCHING_DRIVER' || res.data.status === 'REQUESTED') {
+          setIsSearchingDriver(true);
+        }
+      }
+    } catch (e) {
+      // No active ride in progress
+    }
+  };
+
   // Auto-calculate estimate when pickup/destination change
   useEffect(() => {
-    if (pickupLocation?.lat && destinationLocation?.lat) {
+    if (pickupLocation?.lat && destinationLocation?.lat && !activeRide) {
       handleGetEstimate();
     }
-  }, [pickupLocation?.lat, destinationLocation?.lat]);
+  }, [pickupLocation?.lat, destinationLocation?.lat, activeRide]);
 
   const handleGetEstimate = async () => {
     setLoadingEstimate(true);
@@ -46,11 +65,15 @@ export const BookRidePage = () => {
         setEstimate(res.data);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Failed to estimate ride', e);
     } finally {
       setLoadingEstimate(false);
     }
   };
+
+  const handleRouteCalculated = useCallback((route) => {
+    dispatch(setRouteDetails(route));
+  }, [dispatch]);
 
   const handleRequestRide = async () => {
     setRequestingRide(true);
@@ -68,11 +91,30 @@ export const BookRidePage = () => {
       if (res.success) {
         dispatch(setActiveRide(res.data));
         setIsSearchingDriver(true);
+        dispatch(showToast({ type: 'success', message: '🚗 Searching for nearby ShafiGo drivers...' }));
       }
     } catch (e) {
-      console.error(e);
+      const errorMsg = e.response?.data?.message || e.message;
+      if (errorMsg && errorMsg.includes('already have an active')) {
+        dispatch(showToast({ type: 'warning', message: 'You already have an active ride in progress. Restoring active trip...' }));
+        await fetchActiveRideOnMount();
+      } else {
+        dispatch(showToast({ type: 'error', message: errorMsg || 'Failed to request ride.' }));
+      }
     } finally {
       setRequestingRide(false);
+    }
+  };
+
+  const handleCancelCurrentRide = async () => {
+    if (!activeRide) return;
+    try {
+      await rideApi.cancelRide(activeRide.id, 'User cancelled from booking screen');
+      dispatch(setActiveRide(null));
+      setIsSearchingDriver(false);
+      dispatch(showToast({ type: 'info', message: 'Ongoing ride was cancelled. You can now book a new ride.' }));
+    } catch (e) {
+      dispatch(showToast({ type: 'error', message: 'Failed to cancel active ride.' }));
     }
   };
 
@@ -86,9 +128,11 @@ export const BookRidePage = () => {
     <div className="space-y-6 animate-fade-in pb-16">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white">Book a Ride</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white">
+            {activeRide ? 'Current Active Ride' : 'Book a Ride'}
+          </h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Choose your route and ride option with ShafiGo
+            {activeRide ? 'Track your live trip progression or manage your booking' : 'Choose your route and ride option with ShafiGo'}
           </p>
         </div>
       </div>
@@ -97,14 +141,12 @@ export const BookRidePage = () => {
         {/* Left Column: Booking Form or Active Ride */}
         <div className="lg:col-span-5 space-y-5">
           {activeRide ? (
-            <ActiveRideCard
-              ride={activeRide}
-              onCancelRide={async () => {
-                await rideApi.cancelRide(activeRide.id, 'Changed plans');
-                dispatch(setActiveRide(null));
-                setIsSearchingDriver(false);
-              }}
-            />
+            <div className="space-y-3">
+              <ActiveRideCard
+                ride={activeRide}
+                onCancelRide={handleCancelCurrentRide}
+              />
+            </div>
           ) : (
             <Card className="p-5 sm:p-6 bg-zinc-950 border border-zinc-800 shadow-2xl space-y-5">
               <LocationPicker />
@@ -142,6 +184,7 @@ export const BookRidePage = () => {
             pickup={pickupLocation}
             destination={destinationLocation}
             activeRide={activeRide}
+            onRouteCalculated={handleRouteCalculated}
             className="h-full rounded-3xl border border-zinc-800"
           />
         </div>
@@ -151,13 +194,7 @@ export const BookRidePage = () => {
       <DriverSearchModal
         isOpen={isSearchingDriver && activeRide?.status === 'SEARCHING_DRIVER'}
         ride={activeRide}
-        onCancel={async () => {
-          if (activeRide) {
-            await rideApi.cancelRide(activeRide.id, 'Cancelled search');
-            dispatch(setActiveRide(null));
-          }
-          setIsSearchingDriver(false);
-        }}
+        onCancel={handleCancelCurrentRide}
       />
     </div>
   );

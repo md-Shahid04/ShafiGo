@@ -3,5 +3,6 @@ package com.swiftride.entity;
 public enum DriverVerificationStatus {
     PENDING,
     APPROVED,
-    REJECTED
+    REJECTED,
+    SUSPENDED
 }

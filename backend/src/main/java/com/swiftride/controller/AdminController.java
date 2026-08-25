@@ -34,7 +34,7 @@ public class AdminController {
         this.adminService = adminService;
     }
 
-    @GetMapping("/dashboard")
+    @GetMapping({"/dashboard", "/dashboard/stats"})
     @Operation(summary = "Get platform-wide dashboard statistics and metrics")
     public ResponseEntity<ApiResponse<AdminDashboardStatsDto>> getDashboardStats() {
         AdminDashboardStatsDto stats = adminService.getDashboardStats();
@@ -96,5 +96,12 @@ public class AdminController {
     public ResponseEntity<ApiResponse<List<RideDto>>> getActiveRides() {
         List<RideDto> activeRides = adminService.getActiveRides();
         return ResponseEntity.ok(ApiResponse.success(activeRides));
+    }
+
+    @GetMapping("/drivers/online")
+    @Operation(summary = "Get all currently online and approved drivers")
+    public ResponseEntity<ApiResponse<List<DriverDto>>> getOnlineDrivers() {
+        List<DriverDto> onlineDrivers = adminService.getOnlineDrivers();
+        return ResponseEntity.ok(ApiResponse.success(onlineDrivers));
     }
 }

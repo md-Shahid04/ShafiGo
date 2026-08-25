@@ -93,10 +93,10 @@ export const LoginPage = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleFill('admin@swiftride.com', 'Admin@12345')}
+                onClick={() => handleFill('shafiyashaikt@gmail.com', 'Shafi@123')}
                 className="p-2.5 rounded-xl bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 text-[11px] font-bold text-zinc-200 text-center transition-colors"
               >
-                Admin
+                Admin (Shafi)
               </button>
             </div>
           </div>

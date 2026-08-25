@@ -15,6 +15,7 @@ const initialState = {
     lat: 12.9352,
     lng: 77.6245,
   },
+  routeDetails: null, // { distanceKm, durationMinutes, distanceText, durationText, polyline }
 };
 
 const locationSlice = createSlice({
@@ -30,6 +31,12 @@ const locationSlice = createSlice({
     setUserCurrentLocation: (state, action) => {
       state.userCurrentLocation = action.payload;
     },
+    setRouteDetails: (state, action) => {
+      state.routeDetails = action.payload;
+    },
+    clearRouteDetails: (state) => {
+      state.routeDetails = null;
+    },
     swapLocations: (state) => {
       const temp = state.pickupLocation;
       state.pickupLocation = state.destinationLocation;
@@ -42,6 +49,8 @@ export const {
   setPickupLocation,
   setDestinationLocation,
   setUserCurrentLocation,
+  setRouteDetails,
+  clearRouteDetails,
   swapLocations,
 } = locationSlice.actions;
 

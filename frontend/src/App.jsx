@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { useWebSocket } from './hooks/useWebSocket';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
 import { BottomNav } from './components/common/BottomNav';
@@ -9,6 +10,7 @@ import { AppRoutes } from './routes/AppRoutes';
 
 export const App = () => {
   const { user } = useAuth();
+  useWebSocket();
   const location = useLocation();
 
   const isPublicPage =

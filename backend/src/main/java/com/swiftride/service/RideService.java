@@ -3,6 +3,7 @@ package com.swiftride.service;
 import com.swiftride.dto.request.RideBookingRequest;
 import com.swiftride.dto.request.RideCancelRequest;
 import com.swiftride.dto.response.RideDto;
+import com.swiftride.dto.response.RideEstimateResponse;
 import com.swiftride.entity.*;
 import com.swiftride.exception.BadRequestException;
 import com.swiftride.exception.ConflictException;
@@ -36,6 +37,7 @@ public class RideService {
     private final PricingService pricingService;
     private final MatchingService matchingService;
     private final WebSocketEventPublisher eventPublisher;
+    private final DriverEarningService driverEarningService;
 
     public RideService(
             RideRepository rideRepository,
@@ -43,7 +45,8 @@ public class RideService {
             DriverRepository driverRepository,
             PricingService pricingService,
             MatchingService matchingService,
-            WebSocketEventPublisher eventPublisher
+            WebSocketEventPublisher eventPublisher,
+            DriverEarningService driverEarningService
     ) {
         this.rideRepository = rideRepository;
         this.userRepository = userRepository;
@@ -51,50 +54,66 @@ public class RideService {
         this.pricingService = pricingService;
         this.matchingService = matchingService;
         this.eventPublisher = eventPublisher;
+        this.driverEarningService = driverEarningService;
     }
 
     @Transactional
-    public RideDto requestRide(Long riderId, RideBookingRequest request) {
-        User rider = userRepository.findById(riderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Rider not found: " + riderId));
+    public RideDto requestRide(Long riderUserId, RideBookingRequest request) {
+        User rider = userRepository.findById(riderUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rider not found"));
 
-        boolean hasActiveRide = rideRepository.findFirstByRiderIdAndStatusInOrderByCreatedAtDesc(
-                rider.getId(),
-                List.of(RideStatus.SEARCHING_DRIVER, RideStatus.DRIVER_ACCEPTED, RideStatus.DRIVER_ARRIVING, RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED)
-        ).isPresent();
+        // Check if rider already has an active pending/in-progress ride
+        boolean hasActiveRide = rideRepository.findFirstByRiderIdAndStatusInOrderByCreatedAtDesc(riderUserId, List.of(
+                RideStatus.REQUESTED, RideStatus.SEARCHING_DRIVER,
+                RideStatus.DRIVER_ACCEPTED, RideStatus.DRIVER_ARRIVING,
+                RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED
+        )).isPresent();
 
         if (hasActiveRide) {
             throw new BadRequestException("You already have an active or pending ride in progress");
         }
 
+        // Calculate distance and duration
         double distanceKm = GeoUtils.calculateDistanceKm(
                 request.getPickupLatitude(), request.getPickupLongitude(),
                 request.getDestinationLatitude(), request.getDestinationLongitude()
         );
         int durationMinutes = GeoUtils.estimateDurationMinutes(distanceKm);
-        double estimatedFare = pricingService.calculateFare(distanceKm, durationMinutes, request.getVehicleType());
+
+        RideEstimateResponse estimates = pricingService.calculateEstimate(
+                request.getPickupLatitude(), request.getPickupLongitude(),
+                request.getDestinationLatitude(), request.getDestinationLongitude()
+        );
+
+        Double estimatedFare = estimates.getEstimatedFares().get(request.getVehicleType());
+        if (estimatedFare == null) {
+            estimatedFare = pricingService.calculateFare(distanceKm, durationMinutes, request.getVehicleType());
+        }
 
         Ride ride = Ride.builder()
                 .rider(rider)
-                .vehicleType(request.getVehicleType())
-                .pickupAddress(request.getPickupAddress())
                 .pickupLatitude(request.getPickupLatitude())
                 .pickupLongitude(request.getPickupLongitude())
-                .destinationAddress(request.getDestinationAddress())
+                .pickupAddress(request.getPickupAddress())
                 .destinationLatitude(request.getDestinationLatitude())
                 .destinationLongitude(request.getDestinationLongitude())
-                .distanceKm(BigDecimal.valueOf(distanceKm).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                .destinationAddress(request.getDestinationAddress())
+                .vehicleType(request.getVehicleType())
+                .status(RideStatus.SEARCHING_DRIVER)
+                .distanceKm(distanceKm)
                 .estimatedDurationMinutes(durationMinutes)
                 .estimatedFare(estimatedFare)
-                .status(RideStatus.SEARCHING_DRIVER)
                 .requestedAt(LocalDateTime.now())
                 .build();
 
         Ride savedRide = rideRepository.save(ride);
-
         log.info("Ride requested with ID: {} by Rider: {}", savedRide.getId(), rider.getEmail());
 
+        // Dispatch notification to nearby available drivers asynchronously
         matchingService.dispatchRideToNearbyDrivers(savedRide);
+
+        // Notify Admin Feed
+        eventPublisher.publishRideRequestedToAdmin(savedRide);
 
         return EntityMapper.toRideDto(savedRide);
     }
@@ -196,6 +215,10 @@ public class RideService {
         driverRepository.save(driver);
 
         Ride updated = rideRepository.save(ride);
+
+        // Record driver earning in database
+        driverEarningService.recordRideEarning(updated);
+
         eventPublisher.publishRideCompleted(updated);
         return EntityMapper.toRideDto(updated);
     }
@@ -232,34 +255,39 @@ public class RideService {
     }
 
     @Transactional(readOnly = true)
-    public RideDto getActiveRideForRider(Long riderId) {
-        return rideRepository.findFirstByRiderIdAndStatusInOrderByCreatedAtDesc(
-                riderId,
-                List.of(RideStatus.SEARCHING_DRIVER, RideStatus.DRIVER_ACCEPTED, RideStatus.DRIVER_ARRIVING, RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED)
-        ).map(EntityMapper::toRideDto).orElse(null);
+    public RideDto getActiveRideForRider(Long riderUserId) {
+        Ride ride = rideRepository.findFirstByRiderIdAndStatusInOrderByCreatedAtDesc(riderUserId, List.of(
+                RideStatus.REQUESTED, RideStatus.SEARCHING_DRIVER,
+                RideStatus.DRIVER_ACCEPTED, RideStatus.DRIVER_ARRIVING,
+                RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED
+        )).orElse(null);
+
+        return ride != null ? EntityMapper.toRideDto(ride) : null;
     }
 
     @Transactional(readOnly = true)
     public RideDto getActiveRideForDriver(Long driverUserId) {
-        Driver driver = driverRepository.findByUserId(driverUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+        Driver driver = driverRepository.findByUserId(driverUserId).orElse(null);
+        if (driver == null) return null;
 
-        return rideRepository.findFirstByDriverIdAndStatusInOrderByCreatedAtDesc(
-                driver.getId(),
-                List.of(RideStatus.DRIVER_ACCEPTED, RideStatus.DRIVER_ARRIVING, RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED)
-        ).map(EntityMapper::toRideDto).orElse(null);
+        Ride ride = rideRepository.findFirstByDriverIdAndStatusInOrderByCreatedAtDesc(driver.getId(), List.of(
+                RideStatus.DRIVER_ACCEPTED, RideStatus.DRIVER_ARRIVING,
+                RideStatus.DRIVER_ARRIVED, RideStatus.RIDE_STARTED
+        )).orElse(null);
+
+        return ride != null ? EntityMapper.toRideDto(ride) : null;
     }
 
     @Transactional(readOnly = true)
-    public Page<RideDto> getRiderRideHistory(Long riderId, Pageable pageable) {
-        return rideRepository.findByRiderIdOrderByCreatedAtDesc(riderId, pageable)
+    public Page<RideDto> getRiderRideHistory(Long riderUserId, Pageable pageable) {
+        return rideRepository.findByRiderIdOrderByCreatedAtDesc(riderUserId, pageable)
                 .map(EntityMapper::toRideDto);
     }
 
     @Transactional(readOnly = true)
     public Page<RideDto> getDriverRideHistory(Long driverUserId, Pageable pageable) {
         Driver driver = driverRepository.findByUserId(driverUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver profile not found"));
         return rideRepository.findByDriverIdOrderByCreatedAtDesc(driver.getId(), pageable)
                 .map(EntityMapper::toRideDto);
     }
@@ -267,20 +295,21 @@ public class RideService {
     @Transactional(readOnly = true)
     public RideDto getRideById(Long rideId) {
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
+                .orElseThrow(() -> new ResourceNotFoundException("Ride not found: " + rideId));
         return EntityMapper.toRideDto(ride);
     }
 
     private Ride getRideForDriver(Long driverUserId, Long rideId) {
         Driver driver = driverRepository.findByUserId(driverUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver profile not found"));
 
         Ride ride = rideRepository.findById(rideId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
 
         if (ride.getDriver() == null || !ride.getDriver().getId().equals(driver.getId())) {
-            throw new BadRequestException("Ride is not assigned to this driver");
+            throw new BadRequestException("Driver is not assigned to this ride");
         }
+
         return ride;
     }
 }

@@ -26,10 +26,14 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     long countByVerificationStatus(DriverVerificationStatus status);
     long countByOnlineStatus(DriverOnlineStatus status);
+    long countByVerificationStatusAndOnlineStatus(DriverVerificationStatus verificationStatus, DriverOnlineStatus onlineStatus);
 
     @Query("SELECT d FROM Driver d WHERE d.verificationStatus = :verificationStatus AND d.onlineStatus = :onlineStatus AND d.currentLatitude IS NOT NULL AND d.currentLongitude IS NOT NULL")
     List<Driver> findAvailableDriversWithLocation(
             @Param("verificationStatus") DriverVerificationStatus verificationStatus,
             @Param("onlineStatus") DriverOnlineStatus onlineStatus
     );
+
+    @Query("SELECT d FROM Driver d WHERE d.verificationStatus = 'APPROVED' AND (d.onlineStatus = 'ONLINE' OR d.onlineStatus = 'BUSY') AND d.currentLatitude IS NOT NULL AND d.currentLongitude IS NOT NULL")
+    List<Driver> findAllActiveDriversOnRoad();
 }

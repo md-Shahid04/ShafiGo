@@ -44,24 +44,53 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.count() > 0) {
-            log.info("Database already contains data. Skipping initial seeding.");
+        // 1. Ensure Primary Platform Administrator (shafiyashaikt@gmail.com) always exists
+        userRepository.findByEmail("shafiyashaikt@gmail.com").ifPresentOrElse(
+                existingAdmin -> {
+                    existingAdmin.setPassword(passwordEncoder.encode("Shafi@123"));
+                    existingAdmin.setRole(Role.ROLE_ADMIN);
+                    existingAdmin.setActive(true);
+                    userRepository.save(existingAdmin);
+                    log.info("Verified and updated primary admin account: shafiyashaikt@gmail.com");
+                },
+                () -> {
+                    User shafiAdmin = User.builder()
+                            .firstName("Shafi")
+                            .lastName("Shaik")
+                            .email("shafiyashaikt@gmail.com")
+                            .phone("+91-98888-77777")
+                            .password(passwordEncoder.encode("Shafi@123"))
+                            .role(Role.ROLE_ADMIN)
+                            .active(true)
+                            .build();
+                    userRepository.save(shafiAdmin);
+                    log.info("Created primary admin account: shafiyashaikt@gmail.com");
+                }
+        );
+
+        // Also ensure fallback admin@swiftride.com exists
+        userRepository.findByEmail("admin@swiftride.com").ifPresentOrElse(
+                admin -> {},
+                () -> {
+                    User admin = User.builder()
+                            .firstName("SwiftRide")
+                            .lastName("Admin")
+                            .email("admin@swiftride.com")
+                            .phone("+91-80-25001234")
+                            .password(passwordEncoder.encode("Admin@12345"))
+                            .role(Role.ROLE_ADMIN)
+                            .active(true)
+                            .build();
+                    userRepository.save(admin);
+                }
+        );
+
+        if (userRepository.count() > 2) {
+            log.info("Database already contains initial seed data.");
             return;
         }
 
         log.info("Seeding initial SwiftRide India platform users, drivers, and trips (Bengaluru)...");
-
-        // 1. Seed Platform Administrator
-        User admin = User.builder()
-                .firstName("SwiftRide")
-                .lastName("Admin")
-                .email("admin@swiftride.com")
-                .phone("+91-80-25001234")
-                .password(passwordEncoder.encode("Admin@12345"))
-                .role(Role.ROLE_ADMIN)
-                .active(true)
-                .build();
-        userRepository.save(admin);
 
         // 2. Seed Riders in Bengaluru
         User rider1 = User.builder()

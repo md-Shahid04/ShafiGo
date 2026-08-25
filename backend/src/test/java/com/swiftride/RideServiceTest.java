@@ -112,8 +112,14 @@ class RideServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(rider));
         when(rideRepository.findFirstByRiderIdAndStatusInOrderByCreatedAtDesc(eq(1L), anyList()))
                 .thenReturn(Optional.empty());
-        when(pricingService.calculateFare(anyDouble(), anyInt(), eq(VehicleType.SEDAN)))
-                .thenReturn(15.50);
+
+        com.swiftride.dto.response.RideEstimateResponse mockEstimate = com.swiftride.dto.response.RideEstimateResponse.builder()
+                .distanceKm(5.0)
+                .estimatedDurationMinutes(15)
+                .estimatedFares(java.util.Map.of(VehicleType.SEDAN, 15.50))
+                .build();
+        when(pricingService.calculateEstimate(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+                .thenReturn(mockEstimate);
 
         Ride mockSavedRide = Ride.builder()
                 .id(50L)

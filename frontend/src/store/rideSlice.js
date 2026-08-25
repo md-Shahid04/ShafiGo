@@ -28,6 +28,14 @@ const rideSlice = createSlice({
         state.activeRide = { ...state.activeRide, ...action.payload };
       }
     },
+    updateDriverLiveLocation: (state, action) => {
+      if (state.activeRide) {
+        state.activeRide.driverCurrentLat = action.payload.latitude ?? action.payload.lat;
+        state.activeRide.driverCurrentLng = action.payload.longitude ?? action.payload.lng;
+        state.activeRide.driverHeading = action.payload.heading ?? state.activeRide.driverHeading ?? 0;
+        state.activeRide.driverSpeed = action.payload.speed ?? state.activeRide.driverSpeed ?? 0;
+      }
+    },
     clearActiveRide: (state) => {
       state.activeRide = null;
     },
@@ -66,6 +74,7 @@ const rideSlice = createSlice({
 export const {
   setActiveRide,
   updateActiveRideStatus,
+  updateDriverLiveLocation,
   clearActiveRide,
   setEstimate,
   clearEstimate,

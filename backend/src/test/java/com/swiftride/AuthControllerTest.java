@@ -36,6 +36,12 @@ class AuthControllerTest {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private com.swiftride.config.JwtService jwtService;
+
+    @MockBean
+    private com.swiftride.repository.UserRepository userRepository;
+
     @Test
     @DisplayName("POST /api/auth/register returns 201 Created on valid input")
     void testRegisterRider() throws Exception {
