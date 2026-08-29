@@ -6,7 +6,7 @@ spring:
 
 # Server Configuration
 server:
-  port: ${PORT:8080}
+  port: ${SERVER_PORT:${PORT:8080}}
 
 # CORS Configuration
 cors:
@@ -18,7 +18,7 @@ swiftride:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 Hours
   matching:
-    search-radius-km: ${SEARCH_RADIUS_KM:6.0}
+    search-radius-km: ${SEARCH_RADIUS_KM:5.0}
     driver-response-timeout-seconds: 25
   pricing:
     rates:

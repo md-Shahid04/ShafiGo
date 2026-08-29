@@ -18,3 +18,6 @@ spring:
   h2:
     console:
       enabled: false
+
+server:
+  port: ${SERVER_PORT:${PORT:8080}}
