@@ -19,7 +19,18 @@ import {
 } from '../store/adminSlice';
 import { showToast } from '../store/uiSlice';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
+const RAW_WS_URL =
+  import.meta.env.VITE_WS_URL ||
+  (import.meta.env.PROD
+    ? 'https://shafigo-1.onrender.com/ws'
+    : 'http://localhost:8080/ws');
+
+// Normalize wss:// or ws:// to https:// or http:// for SockJS HTTP transport handshake
+const WS_URL = RAW_WS_URL.startsWith('wss://')
+  ? RAW_WS_URL.replace('wss://', 'https://')
+  : RAW_WS_URL.startsWith('ws://')
+  ? RAW_WS_URL.replace('ws://', 'http://')
+  : RAW_WS_URL;
 
 export const useWebSocket = () => {
   const dispatch = useDispatch();
