@@ -1,22 +1,9 @@
 spring:
-  application:
-    name: shafigo-backend
-  profiles:
-    active: prod
-
----
-# ----------------------------------------------------
-# Production / MySQL Profile
-# ----------------------------------------------------
-spring:
-  config:
-    activate:
-      on-profile: prod | mysql
   datasource:
     url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/swiftride_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
     password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:Tiger@123}}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
@@ -26,14 +13,15 @@ spring:
       hibernate:
         format_sql: false
 
----
-# SwiftRide Application Custom Configurations (India - INR Currency)
+# ====================================================
+# SwiftRide Configuration
+# ====================================================
 swiftride:
   jwt:
-    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-    expiration-ms: 86400000 # 24 Hours
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   matching:
-    search-radius-km: 6.0
+    search-radius-km: ${SEARCH_RADIUS_KM:6.0}
     driver-response-timeout-seconds: 25
   pricing:
     rates:
@@ -53,7 +41,9 @@ swiftride:
         pricePerMinute: 3.50
         minimumFare: 100.00
 
+# ====================================================
 # Swagger / OpenAPI
+# ====================================================
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -63,4 +53,4 @@ springdoc:
     operations-sorter: alpha
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}

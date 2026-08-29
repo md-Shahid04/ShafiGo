@@ -2,20 +2,20 @@ spring:
   application:
     name: shafigo-backend
   profiles:
-    active: mysql
+    active: prod
 
 ---
 # ----------------------------------------------------
-# MySQL Production / Local Profile
+# Production / MySQL Profile
 # ----------------------------------------------------
 spring:
   config:
     activate:
-      on-profile: mysql
+      on-profile: prod | mysql
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/swiftride_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata}
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:Tiger@123}
+    url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/swiftride_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata}}
+    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:Tiger@123}}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
@@ -25,30 +25,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-
----
-# ----------------------------------------------------
-# Development Profile (In-Memory H2 with MySQL Mode)
-# ----------------------------------------------------
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    url: jdbc:h2:mem:swiftridedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL;NON_KEYWORDS=USER,VALUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    generate-ddl: true
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: false
 
 ---
 # SwiftRide Application Custom Configurations (India - INR Currency)

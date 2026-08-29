@@ -35,7 +35,7 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: mysql
+      SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:mysql://mysql:3306/swiftride_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: root
       DB_PASSWORD: root
