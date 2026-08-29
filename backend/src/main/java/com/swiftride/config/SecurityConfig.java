@@ -54,11 +54,19 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Allow all CORS preflight requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Public root, health, error, documentation, and asset endpoints
                 .requestMatchers(
+                    "/",
+                    "/error",
+                    "/api/health",
+                    "/actuator/health",
                     "/api/auth/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
+                    "/swagger-ui/index.html",
+                    "/v3/api-docs",
                     "/v3/api-docs/**",
                     "/swagger-resources/**",
                     "/webjars/**",
