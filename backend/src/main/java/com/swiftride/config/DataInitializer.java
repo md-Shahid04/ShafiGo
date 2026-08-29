@@ -5,15 +5,15 @@ import com.swiftride.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 @Component
-@Profile({"prod", "mysql"})
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
@@ -24,6 +24,7 @@ public class DataInitializer implements CommandLineRunner {
     private final RideRepository rideRepository;
     private final RatingRepository ratingRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
 
     public DataInitializer(
             UserRepository userRepository,
@@ -31,7 +32,8 @@ public class DataInitializer implements CommandLineRunner {
             VehicleRepository vehicleRepository,
             RideRepository rideRepository,
             RatingRepository ratingRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            Environment environment
     ) {
         this.userRepository = userRepository;
         this.driverRepository = driverRepository;
@@ -39,20 +41,15 @@ public class DataInitializer implements CommandLineRunner {
         this.rideRepository = rideRepository;
         this.ratingRepository = ratingRepository;
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
-        // 1. Ensure Primary Platform Administrator (shafiyashaikt@gmail.com) always exists
+        // 1. Ensure Primary Platform Administrator (shafiyashaikt@gmail.com) exists (Idempotent - never overwrites password)
         userRepository.findByEmail("shafiyashaikt@gmail.com").ifPresentOrElse(
-                existingAdmin -> {
-                    existingAdmin.setPassword(passwordEncoder.encode("Shafi@123"));
-                    existingAdmin.setRole(Role.ROLE_ADMIN);
-                    existingAdmin.setActive(true);
-                    userRepository.save(existingAdmin);
-                    log.info("Verified and updated primary admin account: shafiyashaikt@gmail.com");
-                },
+                existingAdmin -> log.info("Primary admin account verified: shafiyashaikt@gmail.com"),
                 () -> {
                     User shafiAdmin = User.builder()
                             .firstName("Shafi")
@@ -64,11 +61,11 @@ public class DataInitializer implements CommandLineRunner {
                             .active(true)
                             .build();
                     userRepository.save(shafiAdmin);
-                    log.info("Created primary admin account: shafiyashaikt@gmail.com");
+                    log.info("Created initial primary admin account: shafiyashaikt@gmail.com");
                 }
         );
 
-        // Also ensure fallback admin@swiftride.com exists
+        // Ensure fallback admin@swiftride.com exists (Idempotent)
         userRepository.findByEmail("admin@swiftride.com").ifPresentOrElse(
                 admin -> {},
                 () -> {
@@ -82,15 +79,25 @@ public class DataInitializer implements CommandLineRunner {
                             .active(true)
                             .build();
                     userRepository.save(admin);
+                    log.info("Created fallback admin account: admin@swiftride.com");
                 }
         );
 
-        if (userRepository.count() > 2) {
-            log.info("Database already contains initial seed data.");
+        // Only seed dummy sample test data in local development ('dev' profile)
+        boolean isDevProfile = Arrays.asList(environment.getActiveProfiles()).contains("dev") 
+                || environment.getActiveProfiles().length == 0;
+
+        if (!isDevProfile) {
+            log.info("Production profile active: skipping sample test data seeding.");
             return;
         }
 
-        log.info("Seeding initial SwiftRide India platform users, drivers, and trips (Bengaluru)...");
+        if (userRepository.count() > 2) {
+            log.info("Development database already contains initial sample seed data.");
+            return;
+        }
+
+        log.info("Seeding initial SwiftRide development sample users, drivers, and trips...");
 
         // 2. Seed Riders in Bengaluru
         User rider1 = User.builder()
@@ -296,6 +303,6 @@ public class DataInitializer implements CommandLineRunner {
         pastRide.setRating(rating);
         rideRepository.save(pastRide);
 
-        log.info("SwiftRide India initial seeding completed successfully.");
+        log.info("SwiftRide development initial seeding completed successfully.");
     }
 }

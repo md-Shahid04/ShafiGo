@@ -15,6 +15,7 @@
 
 # Maven build directory
 target/
+**/target/
 backend/target/
 
 # Node dependencies
