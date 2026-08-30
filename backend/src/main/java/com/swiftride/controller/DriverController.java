@@ -43,6 +43,14 @@ public class DriverController {
         return ResponseEntity.ok(ApiResponse.success(driver));
     }
 
+    @GetMapping("/available")
+    @PreAuthorize("hasRole('RIDER') or hasRole('DRIVER') or hasRole('ADMIN')")
+    @Operation(summary = "Get all currently online and available drivers with GPS")
+    public ResponseEntity<ApiResponse<java.util.List<DriverDto>>> getAvailableDrivers() {
+        java.util.List<DriverDto> drivers = driverService.getAvailableDrivers();
+        return ResponseEntity.ok(ApiResponse.success(drivers));
+    }
+
     @PutMapping("/status")
     @PreAuthorize("hasRole('DRIVER')")
     @Operation(summary = "Toggle driver availability (ONLINE / OFFLINE)")

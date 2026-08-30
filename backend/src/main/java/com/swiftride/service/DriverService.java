@@ -14,6 +14,10 @@ import com.swiftride.util.EntityMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class DriverService {
 
@@ -44,6 +48,13 @@ public class DriverService {
         return EntityMapper.toDriverDto(driver);
     }
 
+    @Transactional(readOnly = true)
+    public List<DriverDto> getAvailableDrivers() {
+        return driverRepository.findAvailableDriversForDispatch().stream()
+                .map(EntityMapper::toDriverDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public DriverDto updateOnlineStatus(Long userId, DriverStatusUpdateDto dto) {
         Driver driver = driverRepository.findByUserId(userId)
@@ -65,6 +76,9 @@ public class DriverService {
         }
 
         driver.setOnlineStatus(dto.getOnlineStatus());
+        if (dto.getOnlineStatus() == DriverOnlineStatus.ONLINE) {
+            driver.setLastLocationUpdate(LocalDateTime.now());
+        }
         Driver updated = driverRepository.save(driver);
 
         // Publish live status change to Admin dashboard
@@ -80,7 +94,7 @@ public class DriverService {
 
         driver.setCurrentLatitude(dto.getLatitude());
         driver.setCurrentLongitude(dto.getLongitude());
-        driver.setLastLocationUpdate(java.time.LocalDateTime.now());
+        driver.setLastLocationUpdate(LocalDateTime.now());
         Driver updated = driverRepository.save(driver);
 
         // Broadcast to Admin live map

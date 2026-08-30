@@ -55,22 +55,25 @@ export const useWebSocket = () => {
   const handleRideEventNotification = useCallback((eventType, ride) => {
     switch (eventType) {
       case 'RIDE_ACCEPTED':
-        dispatch(showToast({ type: 'success', message: 'Driver partner assigned to your ride!' }));
+        dispatch(showToast({ type: 'success', message: '🎉 Driver partner assigned to your ride!' }));
         break;
       case 'DRIVER_ARRIVING':
-        dispatch(showToast({ type: 'info', message: 'Driver is on the way to pickup location.' }));
+        dispatch(showToast({ type: 'info', message: '🚗 Driver is on the way to pickup location.' }));
         break;
       case 'DRIVER_ARRIVED':
-        dispatch(showToast({ type: 'success', message: 'Driver has arrived at pickup point!' }));
+        dispatch(showToast({ type: 'success', message: '📍 Driver has arrived at pickup point!' }));
         break;
       case 'RIDE_STARTED':
-        dispatch(showToast({ type: 'info', message: 'Ride in progress. Have a safe journey!' }));
+        dispatch(showToast({ type: 'info', message: '🚀 Ride in progress. Have a safe journey!' }));
         break;
       case 'RIDE_COMPLETED':
-        dispatch(showToast({ type: 'success', message: 'Ride completed! Thank you for riding with ShafiGo.' }));
+        dispatch(showToast({ type: 'success', message: '🏁 Ride completed! Thank you for riding with ShafiGo.' }));
         break;
       case 'RIDE_CANCELLED':
         dispatch(showToast({ type: 'warning', message: 'Ride was cancelled.' }));
+        break;
+      case 'NO_DRIVER_FOUND':
+        dispatch(showToast({ type: 'error', message: 'No drivers found nearby. Please try again.' }));
         break;
       default:
         break;
@@ -116,7 +119,7 @@ export const useWebSocket = () => {
       console.log('Connected to ShafiGo STOMP WebSocket');
       dispatch(setWsConnected(true));
 
-      // 1. Subscribe to User Notifications
+      // 1. Subscribe to User Notifications Channel
       const notifSub = client.subscribe(`/topic/user/${user.id}/notifications`, (message) => {
         try {
           const notification = JSON.parse(message.body);
@@ -147,9 +150,12 @@ export const useWebSocket = () => {
         const riderSub = client.subscribe(`/topic/rider/${user.id}`, (message) => {
           try {
             const data = JSON.parse(message.body);
-            if (data.ride) {
+            if (data.eventType === 'NO_DRIVER_FOUND' || data.event === 'NO_DRIVER_FOUND') {
+              dispatch(updateActiveRideStatus({ status: 'NO_DRIVER_FOUND' }));
+              handleRideEventNotification('NO_DRIVER_FOUND', data.ride);
+            } else if (data.ride) {
               dispatch(setActiveRide(data.ride));
-              handleRideEventNotification(data.eventType, data.ride);
+              handleRideEventNotification(data.eventType || data.event, data.ride);
             }
           } catch (e) {
             console.error('Failed to parse rider message', e);
@@ -158,47 +164,66 @@ export const useWebSocket = () => {
         subscriptionsRef.current.rider = riderSub;
       }
 
-      // 3. If Driver: Subscribe to Driver Dispatch Channel
+      // 3. If Driver: Subscribe to Driver Dispatch Channel & User Queue
       const currentDriverId = driver?.id || user.driverId || driverProfile?.id || profile?.id;
-      if (user.role === 'ROLE_DRIVER' && currentDriverId) {
-        console.log(`[WS] Subscribed to Driver Dispatch Channel: /topic/driver/${currentDriverId}`);
-        const driverSub = client.subscribe(`/topic/driver/${currentDriverId}`, (message) => {
-          try {
-            const data = JSON.parse(message.body);
-            console.log('[WS] Received driver message:', data.eventType || data.event);
+      if (user.role === 'ROLE_DRIVER') {
+        if (currentDriverId) {
+          console.log(`[WS] Subscribed to Driver Dispatch Channel: /topic/driver/${currentDriverId}`);
+          const driverSub = client.subscribe(`/topic/driver/${currentDriverId}`, (message) => {
+            try {
+              const data = JSON.parse(message.body);
+              console.log('[WS] Received driver message:', data.eventType || data.event);
 
-            if ((data.eventType === 'RIDE_REQUESTED' || data.event === 'RIDE_REQUESTED') && data.ride) {
-              handleIncomingRideRequest(data.ride);
-            } else if (data.eventType === 'DRIVER_VERIFICATION_UPDATED' || data.eventType === 'DRIVER_APPROVED' || data.eventType === 'DRIVER_REJECTED') {
-              if (data.driver) {
-                dispatch(setDriverProfile(data.driver));
-                dispatch(updateDriver(data.driver));
+              if ((data.eventType === 'RIDE_REQUESTED' || data.event === 'RIDE_REQUESTED') && data.ride) {
+                handleIncomingRideRequest(data.ride);
+              } else if (data.eventType === 'DRIVER_VERIFICATION_UPDATED' || data.eventType === 'DRIVER_APPROVED' || data.eventType === 'DRIVER_REJECTED') {
+                if (data.driver) {
+                  dispatch(setDriverProfile(data.driver));
+                  dispatch(updateDriver(data.driver));
+                }
+                const status = data.status || data.approvalStatus || (data.eventType === 'DRIVER_APPROVED' ? 'APPROVED' : null);
+                if (status === 'APPROVED') {
+                  dispatch(setOnlineStatus('OFFLINE'));
+                  dispatch(showToast({ type: 'success', message: '🎉 Account Approved by Admin! You can now Go Online.' }));
+                } else if (status === 'REJECTED') {
+                  dispatch(showToast({ type: 'error', message: 'Driver registration was rejected by Admin.' }));
+                }
+              } else if (data.eventType === 'EARNINGS_UPDATED') {
+                dispatch(showToast({ type: 'success', message: `💰 ₹${data.earningAmount?.toFixed(2)} added to your earnings!` }));
+              } else if (data.eventType === 'RIDE_ASSIGNED' || data.eventType === 'RIDE_CANCELLED' || data.eventType === 'RIDE_REQUEST_EXPIRED') {
+                const rideId = data.ride?.id || data.rideId;
+                if (rideId) {
+                  dispatch(removeIncomingRequest(rideId));
+                }
+              } else if (data.ride) {
+                dispatch(setActiveRide(data.ride));
+                dispatch(removeIncomingRequest(data.ride.id));
+                handleRideEventNotification(data.eventType, data.ride);
               }
-              const status = data.status || data.approvalStatus || (data.eventType === 'DRIVER_APPROVED' ? 'APPROVED' : null);
-              if (status === 'APPROVED') {
-                dispatch(setOnlineStatus('OFFLINE'));
-                dispatch(showToast({ type: 'success', message: '🎉 Account Approved by Admin! You can now Go Online.' }));
-              } else if (status === 'REJECTED') {
-                dispatch(showToast({ type: 'error', message: 'Driver registration was rejected by Admin.' }));
-              }
-            } else if (data.eventType === 'EARNINGS_UPDATED') {
-              dispatch(showToast({ type: 'success', message: `💰 ₹${data.earningAmount?.toFixed(2)} added to your earnings!` }));
-            } else if (data.eventType === 'RIDE_ASSIGNED' || data.eventType === 'RIDE_CANCELLED' || data.eventType === 'RIDE_REQUEST_EXPIRED') {
-              const rideId = data.ride?.id || data.rideId;
-              if (rideId) {
-                dispatch(removeIncomingRequest(rideId));
-              }
-            } else if (data.ride) {
-              dispatch(setActiveRide(data.ride));
-              dispatch(removeIncomingRequest(data.ride.id));
-              handleRideEventNotification(data.eventType, data.ride);
+            } catch (e) {
+              console.error('Failed to parse driver message', e);
             }
-          } catch (e) {
-            console.error('Failed to parse driver message', e);
-          }
-        });
-        subscriptionsRef.current.driver = driverSub;
-        subscriptionsRef.current.driverId = currentDriverId;
+          });
+          subscriptionsRef.current.driver = driverSub;
+          subscriptionsRef.current.driverId = currentDriverId;
+        }
+
+        // Private user queue subscription
+        try {
+          const userQueueSub = client.subscribe('/user/queue/ride-requests', (message) => {
+            try {
+              const data = JSON.parse(message.body);
+              if (data.ride) {
+                handleIncomingRideRequest(data.ride);
+              }
+            } catch (e) {
+              console.error('Failed to parse user queue message', e);
+            }
+          });
+          subscriptionsRef.current.userQueue = userQueueSub;
+        } catch (err) {
+          console.debug('User queue subscription error:', err);
+        }
       }
 
       // 4. If Admin: Subscribe to Admin Activity Feed
@@ -345,9 +370,12 @@ export const useWebSocket = () => {
             accuracy: data.accuracy,
             timestamp: data.timestamp,
           }));
+        } else if (data.eventType === 'NO_DRIVER_FOUND' || data.event === 'NO_DRIVER_FOUND') {
+          dispatch(updateActiveRideStatus({ status: 'NO_DRIVER_FOUND' }));
+          handleRideEventNotification('NO_DRIVER_FOUND', data.ride);
         } else if (data.ride) {
           dispatch(setActiveRide(data.ride));
-          handleRideEventNotification(data.eventType, data.ride);
+          handleRideEventNotification(data.eventType || data.event, data.ride);
         }
       } catch (e) {
         console.error('Failed to parse ride update', e);

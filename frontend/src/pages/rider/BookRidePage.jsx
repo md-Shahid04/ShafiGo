@@ -45,6 +45,19 @@ export const BookRidePage = () => {
     }
   };
 
+  // Sync searching modal with active ride status changes from WebSocket
+  useEffect(() => {
+    if (!activeRide) {
+      setIsSearchingDriver(false);
+      return;
+    }
+    if (activeRide.status === 'SEARCHING_DRIVER' || activeRide.status === 'REQUESTED') {
+      setIsSearchingDriver(true);
+    } else {
+      setIsSearchingDriver(false);
+    }
+  }, [activeRide?.status]);
+
   // Auto-calculate estimate when pickup/destination change
   useEffect(() => {
     if (pickupLocation?.lat && destinationLocation?.lat && !activeRide) {

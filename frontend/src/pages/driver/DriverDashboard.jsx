@@ -35,6 +35,7 @@ export const DriverDashboard = () => {
   const { activeRide } = useSelector((state) => state.ride);
 
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [earnings, setEarnings] = useState(null);
   const [lastGpsCoords, setLastGpsCoords] = useState(null);
   const [heading, setHeading] = useState(0);
@@ -75,12 +76,12 @@ export const DriverDashboard = () => {
 
   const fetchActiveRide = async () => {
     try {
-      const res = await rideApi.getActiveRide();
-      if (res.success) {
+      const res = await rideApi.getActiveDriverRide();
+      if (res.success && res.data) {
         dispatch(setActiveRide(res.data));
       }
     } catch (e) {
-      console.error('Failed to load active ride', e);
+      console.error('Failed to load active driver ride', e);
     }
   };
 
@@ -97,11 +98,11 @@ export const DriverDashboard = () => {
 
   // Transmit throttled GPS telemetry to backend
   const sendLocationUpdate = useCallback(async (telemetry) => {
-    if (!isApproved || effectiveOnlineStatus !== 'ONLINE') return;
+    if (!isApproved) return;
 
     const now = Date.now();
-    // Throttle to maximum 1 update every 2.5 seconds
-    if (now - lastSendTimeRef.current < 2500) {
+    // Throttle to maximum 1 update every 2 seconds
+    if (now - lastSendTimeRef.current < 2000) {
       return;
     }
 
@@ -132,7 +133,7 @@ export const DriverDashboard = () => {
     } catch (err) {
       console.warn('Failed to broadcast driver location:', err);
     }
-  }, [activeRide?.id, dispatch, isApproved, effectiveOnlineStatus]);
+  }, [activeRide?.id, dispatch, isApproved]);
 
   // Start continuous watchPosition tracking
   const startTracking = useCallback(() => {
@@ -202,6 +203,17 @@ export const DriverDashboard = () => {
         dispatch(setOnlineStatus(newStatus));
         if (newStatus === 'ONLINE') {
           dispatch(showToast({ type: 'success', message: '🟢 You are now ONLINE and ready for ride dispatches.' }));
+          // Instantly transmit initial location coordinates
+          const defaultLat = lastGpsCoords?.lat || currentProfile?.currentLatitude || 12.9352;
+          const defaultLng = lastGpsCoords?.lng || currentProfile?.currentLongitude || 77.6245;
+          sendLocationUpdate({
+            latitude: defaultLat,
+            longitude: defaultLng,
+            heading: 0,
+            speed: 0,
+            accuracy: 5,
+            timestamp: Date.now(),
+          });
         } else {
           dispatch(showToast({ type: 'info', message: '🔴 You are now OFFLINE.' }));
         }
@@ -226,13 +238,103 @@ export const DriverDashboard = () => {
       }
     } catch (e) {
       console.error(e);
-      const errMsg = e.response?.data?.message || e.message;
+      const errMsg = e.response?.data?.message || e.message || 'Ride is no longer available';
       dispatch(showToast({ type: 'error', message: errMsg }));
+      dispatch(removeIncomingRequest(rideId));
     }
   };
 
-  const handleRejectRide = (rideId) => {
+  const handleRejectRide = async (rideId) => {
+    try {
+      await rideApi.declineRide(rideId);
+    } catch (err) {
+      console.debug('Decline api error:', err);
+    }
     dispatch(removeIncomingRequest(rideId));
+  };
+
+  // Ride lifecycle state transition handlers for Driver
+  const handleArriving = async () => {
+    if (!activeRide) return;
+    setActionLoading(true);
+    try {
+      const res = await rideApi.driverArriving(activeRide.id);
+      if (res.success) {
+        dispatch(setActiveRide(res.data));
+        dispatch(showToast({ type: 'info', message: 'Heading to pickup location.' }));
+      }
+    } catch (e) {
+      dispatch(showToast({ type: 'error', message: e.message || 'Failed to update status' }));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleArrived = async () => {
+    if (!activeRide) return;
+    setActionLoading(true);
+    try {
+      const res = await rideApi.driverArrived(activeRide.id);
+      if (res.success) {
+        dispatch(setActiveRide(res.data));
+        dispatch(showToast({ type: 'success', message: 'Marked arrived at pickup point.' }));
+      }
+    } catch (e) {
+      dispatch(showToast({ type: 'error', message: e.message || 'Failed to update status' }));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleStartRide = async () => {
+    if (!activeRide) return;
+    setActionLoading(true);
+    try {
+      const res = await rideApi.startRide(activeRide.id);
+      if (res.success) {
+        dispatch(setActiveRide(res.data));
+        dispatch(showToast({ type: 'info', message: 'Trip started. Drive safely!' }));
+      }
+    } catch (e) {
+      dispatch(showToast({ type: 'error', message: e.message || 'Failed to start trip' }));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCompleteRide = async () => {
+    if (!activeRide) return;
+    setActionLoading(true);
+    try {
+      const res = await rideApi.completeRide(activeRide.id);
+      if (res.success) {
+        dispatch(setActiveRide(res.data));
+        dispatch(setOnlineStatus('ONLINE'));
+        dispatch(showToast({ type: 'success', message: '🎉 Trip completed successfully! Fare credited to your earnings.' }));
+        fetchEarnings();
+      }
+    } catch (e) {
+      dispatch(showToast({ type: 'error', message: e.message || 'Failed to complete trip' }));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelRide = async () => {
+    if (!activeRide) return;
+    setActionLoading(true);
+    try {
+      const res = await rideApi.cancelRide(activeRide.id, 'Driver cancelled');
+      if (res.success) {
+        dispatch(setActiveRide(null));
+        dispatch(setOnlineStatus('ONLINE'));
+        dispatch(showToast({ type: 'warning', message: 'Trip was cancelled.' }));
+      }
+    } catch (e) {
+      dispatch(showToast({ type: 'error', message: e.message || 'Failed to cancel trip' }));
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Helper function for quick manual movement simulation
@@ -251,14 +353,6 @@ export const DriverDashboard = () => {
       accuracy: 5,
       timestamp: Date.now(),
     });
-  };
-
-  const handleStatusUpdated = (updated) => {
-    dispatch(setActiveRide(updated));
-    if (updated?.status === 'RIDE_COMPLETED') {
-      dispatch(setOnlineStatus('ONLINE'));
-      fetchEarnings();
-    }
   };
 
   return (
@@ -339,7 +433,12 @@ export const DriverDashboard = () => {
             <div className="space-y-4">
               <RideActionControls
                 ride={activeRide}
-                onStatusUpdated={handleStatusUpdated}
+                onArriving={handleArriving}
+                onArrived={handleArrived}
+                onStartRide={handleStartRide}
+                onCompleteRide={handleCompleteRide}
+                onCancelRide={handleCancelRide}
+                loading={actionLoading}
               />
 
               {/* Quick GPS Drive Simulator controls during active trip */}

@@ -17,6 +17,7 @@ export const rideApi = {
 
   // Driver actions
   acceptRide: (id) => axiosClient.post(`/rides/${id}/accept`),
+  declineRide: (id) => axiosClient.post(`/rides/${id}/decline`),
   driverArriving: (id) => axiosClient.post(`/rides/${id}/arriving`),
   driverArrived: (id) => axiosClient.post(`/rides/${id}/arrive`),
   startRide: (id) => axiosClient.post(`/rides/${id}/start`),

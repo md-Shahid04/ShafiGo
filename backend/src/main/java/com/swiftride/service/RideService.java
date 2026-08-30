@@ -21,8 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -107,9 +105,9 @@ public class RideService {
                 .build();
 
         Ride savedRide = rideRepository.save(ride);
-        log.info("Ride requested with ID: {} by Rider: {}", savedRide.getId(), rider.getEmail());
+        log.info("[RIDE] Ride created with ID: {} by Rider: {}", savedRide.getId(), rider.getEmail());
 
-        // Dispatch notification to nearby available drivers asynchronously
+        // Dispatch notification to nearby available drivers
         matchingService.dispatchRideToNearbyDrivers(savedRide);
 
         // Notify Admin Feed
@@ -151,10 +149,24 @@ public class RideService {
         driverRepository.save(driver);
 
         Ride updatedRide = rideRepository.save(ride);
+        matchingService.cleanupRideOffers(rideId);
 
+        log.info("[RIDE] Driver ID #{} successfully accepted Ride #{}", driver.getId(), rideId);
         eventPublisher.publishRideAccepted(updatedRide);
 
         return EntityMapper.toRideDto(updatedRide);
+    }
+
+    @Transactional
+    public RideDto declineRide(Long driverUserId, Long rideId) {
+        Driver driver = driverRepository.findByUserId(driverUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver profile not found"));
+
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ride not found with id: " + rideId));
+
+        matchingService.handleDriverDecline(rideId, driver.getId(), ride);
+        return EntityMapper.toRideDto(ride);
     }
 
     @Transactional
@@ -215,6 +227,7 @@ public class RideService {
         driverRepository.save(driver);
 
         Ride updated = rideRepository.save(ride);
+        matchingService.cleanupRideOffers(rideId);
 
         // Record driver earning in database
         driverEarningService.recordRideEarning(updated);
@@ -250,6 +263,7 @@ public class RideService {
         }
 
         Ride updated = rideRepository.save(ride);
+        matchingService.cleanupRideOffers(rideId);
         eventPublisher.publishRideCancelled(updated);
         return EntityMapper.toRideDto(updated);
     }

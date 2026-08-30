@@ -34,7 +34,7 @@ class MatchingServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(matchingService, "searchRadiusKm", 5.0);
-        ReflectionTestUtils.setField(matchingService, "locationFreshnessSeconds", 300L);
+        ReflectionTestUtils.setField(matchingService, "maxSearchRadiusKm", 25.0);
     }
 
     @Test
@@ -60,10 +60,7 @@ class MatchingServiceTest {
         Vehicle v2 = Vehicle.builder().vehicleType(VehicleType.SEDAN).active(true).build();
         farDriver.getVehicles().add(v2);
 
-        when(driverRepository.findByVerificationStatusAndOnlineStatus(
-                DriverVerificationStatus.APPROVED,
-                DriverOnlineStatus.ONLINE
-        )).thenReturn(List.of(closeDriver, farDriver));
+        when(driverRepository.findAvailableDriversForDispatch()).thenReturn(List.of(closeDriver, farDriver));
 
         List<Driver> result = matchingService.findNearbyDrivers(40.7128, -74.0060, VehicleType.SEDAN);
 

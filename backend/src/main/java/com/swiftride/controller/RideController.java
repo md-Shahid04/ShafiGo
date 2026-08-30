@@ -72,6 +72,18 @@ public class RideController {
         return ResponseEntity.ok(ApiResponse.success("Ride accepted successfully", ride));
     }
 
+    @PostMapping("/{id}/decline")
+    @SecurityRequirement(name = "BearerAuth")
+    @PreAuthorize("hasRole('DRIVER')")
+    @Operation(summary = "Driver declines a dispatched ride request")
+    public ResponseEntity<ApiResponse<RideDto>> declineRide(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id
+    ) {
+        RideDto ride = rideService.declineRide(user.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("Ride request declined", ride));
+    }
+
     @PostMapping("/{id}/arriving")
     @SecurityRequirement(name = "BearerAuth")
     @PreAuthorize("hasRole('DRIVER')")

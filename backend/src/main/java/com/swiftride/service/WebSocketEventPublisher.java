@@ -26,13 +26,15 @@ public class WebSocketEventPublisher {
         this.messagingTemplate = messagingTemplate;
     }
 
-    public void publishRideRequestedToDriver(Long driverId, Long userId, Ride ride) {
-        String destination = WebSocketConstants.TOPIC_DRIVER_DISPATCH.replace("{driverId}", String.valueOf(driverId));
+    public void publishRideRequestedToDriver(Long driverId, Long userId, String userEmail, Ride ride) {
+        String driverTopic = WebSocketConstants.TOPIC_DRIVER_DISPATCH.replace("{driverId}", String.valueOf(driverId));
         Map<String, Object> payload = createPayload(WebSocketConstants.EVENT_RIDE_REQUESTED, ride);
         payload.put("event", WebSocketConstants.EVENT_RIDE_REQUESTED);
-        log.info("Broadcasting RIDE_REQUESTED to driver destination: {}", destination);
-        messagingTemplate.convertAndSend(destination, payload);
 
+        log.info("[WS] Broadcasting RIDE_REQUESTED to driver topic: {}", driverTopic);
+        messagingTemplate.convertAndSend(driverTopic, payload);
+
+        // Targeted user notification channel
         if (userId != null) {
             String userTopic = WebSocketConstants.TOPIC_USER_NOTIFICATIONS.replace("{userId}", String.valueOf(userId));
             Map<String, Object> notif = new HashMap<>();
@@ -44,15 +46,40 @@ public class WebSocketEventPublisher {
             notif.put("timestamp", System.currentTimeMillis());
             messagingTemplate.convertAndSend(userTopic, notif);
         }
+
+        // Targeted Spring user destination queue
+        if (userEmail != null) {
+            try {
+                messagingTemplate.convertAndSendToUser(userEmail, "/queue/ride-requests", payload);
+            } catch (Exception e) {
+                log.debug("User destination queue delivery skipped: {}", e.getMessage());
+            }
+        }
+    }
+
+    public void publishRideRequestedToDriver(Long driverId, Long userId, Ride ride) {
+        publishRideRequestedToDriver(driverId, userId, null, ride);
     }
 
     public void publishRideRequestedToDriver(Long driverId, Ride ride) {
-        publishRideRequestedToDriver(driverId, null, ride);
+        publishRideRequestedToDriver(driverId, null, null, ride);
     }
 
     public void publishRideRequestedToAdmin(Ride ride) {
         Map<String, Object> payload = createPayload(WebSocketConstants.EVENT_RIDE_REQUESTED, ride);
         messagingTemplate.convertAndSend(WebSocketConstants.TOPIC_ADMIN_FEED, payload);
+    }
+
+    public void publishNoDriverFound(Ride ride) {
+        Map<String, Object> payload = createPayload("NO_DRIVER_FOUND", ride);
+        payload.put("message", "No driver available in your area right now. Please try again.");
+
+        if (ride.getRider() != null) {
+            String riderTopic = WebSocketConstants.TOPIC_RIDER_UPDATES.replace("{riderId}", String.valueOf(ride.getRider().getId()));
+            messagingTemplate.convertAndSend(riderTopic, payload);
+        }
+        String rideTopic = WebSocketConstants.TOPIC_RIDE_TRACKING.replace("{rideId}", String.valueOf(ride.getId()));
+        messagingTemplate.convertAndSend(rideTopic, payload);
     }
 
     public void publishRideAccepted(Ride ride) {
@@ -232,6 +259,7 @@ public class WebSocketEventPublisher {
     private Map<String, Object> createPayload(String eventType, Ride ride) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("eventType", eventType);
+        payload.put("event", eventType);
         payload.put("ride", EntityMapper.toRideDto(ride));
         payload.put("timestamp", System.currentTimeMillis());
         return payload;
