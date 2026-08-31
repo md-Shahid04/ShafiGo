@@ -18,19 +18,14 @@ import {
   setWsConnected,
 } from '../store/adminSlice';
 import { showToast } from '../store/uiSlice';
-
-const RAW_WS_URL =
-  import.meta.env.VITE_WS_URL ||
-  (import.meta.env.PROD
-    ? 'https://shafigo-1.onrender.com/ws'
-    : 'http://localhost:8080/ws');
+import { WS_BASE_URL } from '../api/config';
 
 // Normalize wss:// or ws:// to https:// or http:// for SockJS HTTP transport handshake
-const WS_URL = RAW_WS_URL.startsWith('wss://')
-  ? RAW_WS_URL.replace('wss://', 'https://')
-  : RAW_WS_URL.startsWith('ws://')
-  ? RAW_WS_URL.replace('ws://', 'http://')
-  : RAW_WS_URL;
+const WS_URL = WS_BASE_URL.startsWith('wss://')
+  ? WS_BASE_URL.replace('wss://', 'https://')
+  : WS_BASE_URL.startsWith('ws://')
+  ? WS_BASE_URL.replace('ws://', 'http://')
+  : WS_BASE_URL;
 
 export const useWebSocket = () => {
   const dispatch = useDispatch();

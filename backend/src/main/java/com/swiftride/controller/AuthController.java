@@ -36,7 +36,7 @@ public class AuthController {
                 .body(ApiResponse.success("Rider account created successfully", response));
     }
 
-    @PostMapping("/driver-register")
+    @PostMapping({"/driver-register", "/register-driver"})
     @Operation(summary = "Register as a driver with vehicle information")
     public ResponseEntity<ApiResponse<AuthResponse>> registerDriver(@Valid @RequestBody DriverRegisterRequest request) {
         AuthResponse response = authService.registerDriver(request);
