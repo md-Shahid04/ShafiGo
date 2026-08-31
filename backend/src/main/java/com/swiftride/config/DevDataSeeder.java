@@ -46,7 +46,7 @@ public class DevDataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.count() > 2) {
+        if (userRepository.existsByEmail("rider2@swiftride.com") || userRepository.count() > 4) {
             log.info("Development database already contains sample seed data.");
             return;
         }
